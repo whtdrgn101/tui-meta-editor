@@ -12,7 +12,7 @@ class MediaRenamer:
     
     def rename_file(self, file_path: str, season: int, episode: int) -> bool:
         path, new_filename = self.generate_new_name(file_path, season, episode)
-        os.rename(file_path, f"{path}\\{new_filename}")
+        os.rename(file_path, f"{path}/{new_filename}")
         return True
     
     def generate_new_name(self, file_path: str, season: int, episode: int) -> str:

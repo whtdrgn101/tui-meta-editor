@@ -1,4 +1,4 @@
-# media_organizer/media/scanner.py
+# media/scanner.py
 import os
 from pathlib import Path
 from typing import List, Set
