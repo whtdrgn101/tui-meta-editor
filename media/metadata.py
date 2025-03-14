@@ -111,9 +111,8 @@ class MetadataManager:
         Returns:
             True if successful, False otherwise
         """
-        # STUB: Implement using mkvpropedit (command line tool)
-        # MKV metadata is more complex and often requires external tools
-        # Example implementation might use subprocess to call mkvpropedit
+        if "title" in metadata:
+            os.system(f"mkvpropedit \"{file_path}\" -s title=\"{metadata["title"]}\"")
         
         print(f"Updating MKV metadata for {file_path}")
         print(f"  Title: {metadata.get('title', 'N/A')}")

@@ -7,5 +7,5 @@ This uses the standard python virtual environment and some libraries/utilities f
 1. python -m venv venv
 2. source venv/bin/activate or venv\Scripts\activate.bat on windows
 3. pip install -r requirements.txt
-4. install a MKV utilitity (sort out later)
+4. Install [MKVToolNix](https://mkvtoolnix.download/downloads.html#debian) application for updating MKV files
 5. python app.py
