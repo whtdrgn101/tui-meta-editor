@@ -20,5 +20,9 @@ class MediaRenamer:
         extension = file_path.suffix
         
         # Format according to the pattern
-        new_name = f"{self.title} S{season:02d} EP{episode:02d}{extension}"
+        episodeName = self.generate_episode_name(season, episode)
+        new_name = f"{episodeName}{extension}"
         return directory, new_name
+
+    def generate_episode_name(self, season: int, episode: int) -> str:
+        return f"{self.title} S{season:02d} EP{episode:02d}"

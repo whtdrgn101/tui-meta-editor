@@ -105,18 +105,20 @@ class MediaOrganizerApp(App):
                 yield Input("", id="season-input", type="integer")
                 yield Label("Episode:")
                 yield Input("", id="episode-input", type="integer")
+                yield Button("Scan Directory", id="scan-btn", variant="primary")
 
             with Vertical(classes="files-container"):
                 
+                with Horizontal(classes="action-bar"):
+                    yield Button("Rename All", id="rename-btn", variant="success", disabled=True)
+                    yield Button("Update Metadata", id="metadata-btn", variant="warning", disabled=True)
+
                 # Create table for showing files
                 table = DataTable(id="files-table")
                 table.add_columns("Original Name", "Status")
                 yield table
                 
-                with Horizontal(classes="action-bar"):
-                    yield Button("Scan Directory", id="scan-btn", variant="primary")
-                    yield Button("Rename All", id="rename-btn", variant="success")
-                    yield Button("Update Metadata", id="metadata-btn", variant="warning")
+                
         
         yield Static("Ready", id="status-bar")
     
@@ -145,6 +147,11 @@ class MediaOrganizerApp(App):
         if button_id == "scan-btn":
             if self.current_dir:
                 self.scan_directory(self.current_dir)
+                renameBtn = self.query_one("#rename-btn")
+                renameBtn.disabled = False
+                betadataBtn = self.query_one("#metadata-btn")
+                betadataBtn.disabled = False
+
             else:
                 self.update_status("Please select a directory first")
         

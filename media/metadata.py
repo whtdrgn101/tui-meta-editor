@@ -2,6 +2,8 @@
 from typing import Dict, Optional, Any
 import os
 from pathlib import Path
+import subprocess
+from media import MediaRenamer
 
 class MetadataManager:
     """Class for managing metadata of media files."""
@@ -112,7 +114,13 @@ class MetadataManager:
             True if successful, False otherwise
         """
         if "title" in metadata:
-            os.system(f"mkvpropedit \"{file_path}\" -s title=\"{metadata["title"]}\"")
+            try:
+                renamer = MediaRenamer(metadata['title'])
+                showTitle = renamer.generate_episode_name(metadata['season'], metadata['episode'])
+                output = subprocess.run(["mkvpropedit", file_path, '-s', f"title=\"{showTitle}\""], capture_output=True, text=True)
+            except Exception as ex:
+                print(ex)
+    
         
         print(f"Updating MKV metadata for {file_path}")
         print(f"  Title: {metadata.get('title', 'N/A')}")
