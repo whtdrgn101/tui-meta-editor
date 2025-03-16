@@ -82,19 +82,22 @@ class MediaOrganizerApp(App):
         ("s", "scan_directory", "Scan Directory"),
     ]
     
-    def __init__(self):
+    ROOT = ""
+
+    def __init__(self, root: str):
         super().__init__()
         self.scanner = MediaScanner()
         self.metadata_manager = MetadataManager()
         self.media_files = []
         self.current_dir = None
+        self.ROOT = root
     
     def compose(self) -> ComposeResult:
         yield Header()
         yield Footer()
         
         with Horizontal(classes="container"):
-            yield DirectoryTree(".", id="dir-tree")
+            yield DirectoryTree(id="dir-tree", path=self.ROOT)
             with Vertical(classes="input-container"): 
                 yield Label("Title:")
                 yield Input("", id="title-input")
@@ -228,29 +231,27 @@ class MediaOrganizerApp(App):
         table = self.query_one("#files-table")
         
         for i, media_file in enumerate(self.media_files):
+            coord = Coordinate(i,1)
             try:
-                # Extract metadata info from filename
-                title, season, episode = self.renamer.extract_info_from_filename(media_file.new_name)
-                
                 # Update status in table
-                table.update_cell(i, 2, "Updating metadata...")
+                table.update_cell_at(coord, "Updating metadata...")
                 await asyncio.sleep(0.1)  # Small delay for UI responsiveness
                 
                 # Update metadata (this will call your implementation)
                 metadata = {
-                    "title": title,
-                    "season": season, 
-                    "episode": episode
+                    "title": self.title,
+                    "season": self.season, 
+                    "episode": i + 1
                 }
                 success = self.metadata_manager.update_metadata(media_file.path, metadata)
                 
                 # Update status
                 if success:
-                    table.update_cell(i, 2, "Updated")
+                    table.update_cell_at(coord, "Updated")
                 else:
-                    table.update_cell(i, 2, "Failed")
+                    table.update_cell_at(coord, "Failed")
             except Exception as e:
-                table.update_cell(i, 2, f"Error: {str(e)}")
+                table.update_cell_at(coord, f"Error: {str(e)}")
         
         self.update_status("Metadata update complete")
     
@@ -258,9 +259,9 @@ class MediaOrganizerApp(App):
         """Update the status bar with a message."""
         self.query_one("#status-bar").update(message)
 
-def run_app():
+def run_app(root: str):
     """Run the application."""
-    app = MediaOrganizerApp()
+    app = MediaOrganizerApp(root)
     app.run()
 
 if __name__ == "__main__":
