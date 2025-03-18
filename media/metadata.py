@@ -76,9 +76,12 @@ class MetadataManager:
         try:
             mp4 = MP4(file_path)
             
+            
             # Update title
             if "title" in metadata:
-                mp4['\xa9nam'] = metadata["title"]
+                renamer = MediaRenamer(metadata['title'])
+                showTitle = renamer.generate_episode_name(metadata['season'], metadata['episode'])
+                mp4['\xa9nam'] = showTitle
                 
             # Update TV show info
             if "season" in metadata and "episode" in metadata:
@@ -103,16 +106,7 @@ class MetadataManager:
         return True
     
     def _update_mkv_metadata(self, file_path: str, metadata: Dict[str, Any]) -> bool:
-        """
-        Update metadata for MKV files.
-        
-        Args:
-            file_path: Path to the MKV file
-            metadata: Dictionary containing metadata to update
-            
-        Returns:
-            True if successful, False otherwise
-        """
+
         if "title" in metadata:
             try:
                 renamer = MediaRenamer(metadata['title'])
@@ -120,12 +114,6 @@ class MetadataManager:
                 output = subprocess.run(["mkvpropedit", file_path, '-s', f"title=\"{showTitle}\""], capture_output=True, text=True)
             except Exception as ex:
                 print(ex)
-    
-        
-        print(f"Updating MKV metadata for {file_path}")
-        print(f"  Title: {metadata.get('title', 'N/A')}")
-        print(f"  Season: {metadata.get('season', 'N/A')}")
-        print(f"  Episode: {metadata.get('episode', 'N/A')}")
         
         # Return True to simulate success in the stub
         return True
