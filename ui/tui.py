@@ -2,7 +2,7 @@
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import Button, DirectoryTree, Footer, Header, Input, Static
-from textual.widgets import Label, DataTable
+from textual.widgets import Label, DataTable, Select
 from textual import work
 from textual.coordinate import Coordinate
 import os
@@ -81,7 +81,25 @@ class MediaOrganizerApp(App):
         ("r", "rename_files", "Rename Files"),
         ("s", "scan_directory", "Scan Directory"),
     ]
-    
+
+    GENRES = [line.strip() for line in """
+        Action
+        Adventure
+        Animated
+        Anime
+        Comedy
+        Drama
+        Fantasy
+        Horror
+        Musical
+        Mystery
+        Romance
+        Science Fiction
+        Sports
+        Thriller
+        Western
+        """.splitlines()]
+    GENRES =  list(zip(GENRES, GENRES))
     ROOT = ""
 
     def __init__(self, root: str):
@@ -101,6 +119,8 @@ class MediaOrganizerApp(App):
             with Vertical(classes="input-container"): 
                 yield Label("Title:")
                 yield Input("", id="title-input")
+                yield Label("Genre")
+                yield Select[str](id="genre-select", options=self.GENRES)
                 yield Label("Season:")
                 yield Input("", id="season-input", type="integer")
                 yield Label("Episode:")
@@ -143,6 +163,9 @@ class MediaOrganizerApp(App):
         episode_input = self.query_one("#episode-input")
         if(episode_input):
             self.episode = int(episode_input.value)
+        genre_select = self.query_one("#genre-select")
+        if(genre_select):
+            self.genre = genre_select.value
 
         if button_id == "scan-btn":
             if self.current_dir:
@@ -248,7 +271,8 @@ class MediaOrganizerApp(App):
                 metadata = {
                     "title": self.title,
                     "season": self.season, 
-                    "episode": i + 1
+                    "episode": i + 1,
+                    "genre": self.genre
                 }
                 success = self.metadata_manager.update_metadata(media_file.path, metadata)
                 

@@ -75,8 +75,7 @@ class MetadataManager:
         
         try:
             mp4 = MP4(file_path)
-            
-            
+              
             # Update title
             if "title" in metadata:
                 renamer = MediaRenamer(metadata['title'])
@@ -88,6 +87,9 @@ class MetadataManager:
                 # Format for TV shows: [season number, episode number, episode ID]
                 mp4['tvsn'] = [metadata["season"]]
                 mp4['tves'] = [metadata["episode"]]
+
+            if "genre" in metadata:
+                mp4['\xa9gen'] = metadata["genre"]
                 
             # Save changes
             mp4.save()
@@ -95,15 +97,6 @@ class MetadataManager:
         except Exception as e:
             print(f"Error updating MP4 metadata: {e}")
             return False
-        
-        
-        print(f"Updating MP4 metadata for {file_path}")
-        print(f"  Title: {metadata.get('title', 'N/A')}")
-        print(f"  Season: {metadata.get('season', 'N/A')}")
-        print(f"  Episode: {metadata.get('episode', 'N/A')}")
-        
-        # Return True to simulate success in the stub
-        return True
     
     def _update_mkv_metadata(self, file_path: str, metadata: Dict[str, Any]) -> bool:
 
