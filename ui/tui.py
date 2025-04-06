@@ -2,7 +2,7 @@
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, Vertical
 from textual.widgets import Button, DirectoryTree, Footer, Header, Input, Static
-from textual.widgets import Label, DataTable, Select
+from textual.widgets import Label, DataTable, Select, Checkbox
 from textual import work
 from textual.coordinate import Coordinate
 import os
@@ -39,9 +39,7 @@ class MediaOrganizerApp(App):
     }
     
     DirectoryTree {
-        width: 30%;
-        height: 100%;
-        border: solid #3498db;
+        height: 90%;
     }
     
     .container {
@@ -50,6 +48,14 @@ class MediaOrganizerApp(App):
     .input-container {
         width: 30%;
         height: 100%;
+        border: solid #3498db;
+    }
+    .input-container-2 {
+        width: 50%;
+        border: solid #3498db;
+    }
+    .input-container-1 {
+        width: 100%;
         border: solid #3498db;
     }
     .files-container {
@@ -115,18 +121,28 @@ class MediaOrganizerApp(App):
         yield Footer()
         
         with Horizontal(classes="container"):
-            yield DirectoryTree(id="dir-tree", path=self.ROOT)
+
+            with Vertical(classes="input-container"):
+                yield DirectoryTree(id="dir-tree", path=self.ROOT)
+                yield Button("Scan Directory", id="scan-btn", variant="primary")
+            
             with Vertical(classes="input-container"): 
                 yield Label("Title:")
                 yield Input("", id="title-input")
-                yield Label("Genre")
+                yield Label("Genre:")
                 yield Select[str](id="genre-select", options=self.GENRES)
-                yield Label("Season:")
-                yield Input("", id="season-input", type="integer")
-                yield Label("Episode:")
-                yield Input("", id="episode-input", type="integer")
-                yield Button("Scan Directory", id="scan-btn", variant="primary")
-
+                yield Label("Year:")
+                yield Input("2000", id="year-input", type="integer")
+                with Vertical(classes="input-container-1"):
+                    yield Checkbox(id="sequence_series_checkbox", label="Sequence Series?", value=False)
+                    with Horizontal(classes="container"):
+                        with Vertical(classes="input-container-2"):
+                            yield Label("Season:")
+                            yield Input("1", id="season-input", type="integer", disabled=True)
+                        with Vertical(classes="input-container-2"):
+                            yield Label("Episode:")
+                            yield Input("1", id="episode-input", type="integer", disabled=True)
+                    
             with Vertical(classes="files-container"):
                 
                 with Horizontal(classes="action-bar"):
@@ -151,6 +167,19 @@ class MediaOrganizerApp(App):
         self.current_dir = event.path
         self.update_status(f"Selected directory: {self.current_dir}")
     
+    def on_checkbox_changed(self, event) -> None:
+        checkbox = self.query_one("#sequence_series_checkbox")
+        season_input = self.query_one("#season-input")  
+        episode_input = self.query_one("#episode-input")
+        
+        if checkbox.value:
+            season_input.disabled = False
+            episode_input.disabled = False
+        else:
+            season_input.disabled = True
+            episode_input.disabled = True
+
+
     def on_button_pressed(self, event) -> None:
         """Handle button presses."""
         button_id = event.button.id
@@ -159,10 +188,10 @@ class MediaOrganizerApp(App):
             self.title = title_input.value
         season_input = self.query_one("#season-input")
         if season_input:
-            self.season = int(season_input.value)
+            self.season = int(season_input.value or "1")
         episode_input = self.query_one("#episode-input")
         if(episode_input):
-            self.episode = int(episode_input.value)
+            self.episode = int(episode_input.value or "1")
         genre_select = self.query_one("#genre-select")
         if(genre_select):
             self.genre = genre_select.value
