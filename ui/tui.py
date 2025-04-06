@@ -20,7 +20,9 @@ class MediaOrganizerApp(App):
     title = ""
     season = 1
     episode = 1
-    
+    year = 2000
+    rename_on_series = False
+
     CSS = """
     Screen {
         background: #0f0f1f;
@@ -195,6 +197,12 @@ class MediaOrganizerApp(App):
         genre_select = self.query_one("#genre-select")
         if(genre_select):
             self.genre = genre_select.value
+        year_input = self.query_one("#year-input")
+        if year_input:
+            self.year = int(year_input.value or 2000)
+        checkbox = self.query_one("#sequence_series_checkbox")
+        if checkbox:
+            self.rename_on_series = checkbox.value
 
         if button_id == "scan-btn":
             if self.current_dir:
@@ -265,7 +273,7 @@ class MediaOrganizerApp(App):
                 await asyncio.sleep(0.1)  # Small delay for UI responsiveness
                 
                 # Perform the rename
-                success = renamer.rename_file(media_file.path, self.season, cur_episode)
+                success = renamer.rename_file(media_file.path, self.season, cur_episode, self.rename_on_series)
 
                 # Update status
                 if success:
@@ -301,7 +309,8 @@ class MediaOrganizerApp(App):
                     "title": self.title,
                     "season": self.season, 
                     "episode": i + 1,
-                    "genre": self.genre
+                    "genre": self.genre,
+                    "year": self.year
                 }
                 success = self.metadata_manager.update_metadata(media_file.path, metadata)
                 
