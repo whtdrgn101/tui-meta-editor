@@ -92,7 +92,7 @@ class MetadataManager:
                 mp4['\xa9gen'] = metadata["genre"]
             
             if "year" in metadata:
-                mp4['\xa9day'] = [metadata["year"]]
+                mp4['\xa9day'] = [str(metadata["year"])]
                 
             # Save changes
             mp4.save()

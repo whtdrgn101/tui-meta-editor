@@ -27,4 +27,4 @@ class MediaRenamer:
         return directory, new_name
 
     def generate_episode_name(self, season: int, episode: int) -> str:
-        return f"{self.title} S{season:02d} EP{episode:02d}"
+        return f"{self.title} S{season:02d} EP{episode:03d}"
