@@ -6,8 +6,8 @@ from pathlib import Path
 
 import click
 
-from media_organizer.config import AppConfig
-from media_organizer.logging_config import setup_logging
+from .config import AppConfig
+from .logging_config import setup_logging
 
 
 @click.command()
@@ -35,7 +35,7 @@ def main(root: Path | None, debug: bool) -> int:
     root_path = root if root else config.default_root
 
     try:
-        from media_organizer.ui.gui import run_gui
+        from .ui.gui import run_gui
 
         run_gui(root_path, config)
         return 0
