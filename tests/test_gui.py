@@ -8,6 +8,79 @@ from media_organizer.config import AppConfig
 from media_organizer.models import MediaFile, MediaMetadata
 
 
+@pytest.fixture
+def window(qtbot, tmp_path):
+    """Create a MediaOrganizerWindow for testing."""
+    from media_organizer.ui.gui import MediaOrganizerWindow
+
+    window = MediaOrganizerWindow(tmp_path)
+    qtbot.addWidget(window)
+    return window
+
+
+class TestMediaOrganizerWindowToolbar:
+    """Tests for MediaOrganizerWindow toolbar functionality."""
+
+    def test_initial_button_states(self, window):
+        """Test that Scan, Refresh, Rename, Metadata buttons are disabled initially."""
+        assert not window._scan_action.isEnabled()
+        assert not window._refresh_action.isEnabled()
+        assert not window._rename_action.isEnabled()
+        assert not window._metadata_action.isEnabled()
+        # Browse should be enabled
+        assert window._browse_action.isEnabled()
+
+    def test_initial_directory_label(self, window):
+        """Test that directory label shows 'No folder selected' initially."""
+        assert window._dir_label.text() == "No folder selected"
+
+    def test_folder_selected_enables_scan_and_refresh(self, window, tmp_path):
+        """Test that selecting a folder enables Scan and Refresh buttons."""
+        window._current_dir = tmp_path
+        window._on_folder_selected()
+
+        assert window._scan_action.isEnabled()
+        assert window._refresh_action.isEnabled()
+
+    def test_folder_selected_updates_directory_label(self, window, tmp_path):
+        """Test that selecting a folder updates the directory label."""
+        window._current_dir = tmp_path
+        window._on_folder_selected()
+
+        assert window._dir_label.text() == str(tmp_path)
+
+    def test_close_button_exists(self, window):
+        """Test that close button exists and is enabled."""
+        assert window._close_button is not None
+        assert window._close_button.isEnabled()
+
+    def test_close_button_closes_window(self, window, qtbot):
+        """Test that clicking close button closes the window."""
+        window.show()
+        qtbot.waitExposed(window)
+
+        window._close_button.click()
+
+        # Window should be closed or closing
+        assert not window.isVisible()
+
+    def test_browse_action_tooltip(self, window):
+        """Test browse action has correct tooltip."""
+        assert "Select root folder" in window._browse_action.toolTip()
+
+    def test_scan_action_tooltip(self, window):
+        """Test scan action has correct tooltip."""
+        assert "Scan" in window._scan_action.toolTip()
+
+    def test_refresh_action_tooltip(self, window):
+        """Test refresh action has correct tooltip."""
+        assert "Refresh" in window._refresh_action.toolTip()
+
+    def test_close_button_tooltip(self, window):
+        """Test close button has correct tooltip."""
+        assert "Close" in window._close_button.toolTip()
+
+
 class TestScanWorker:
     """Tests for ScanWorker thread."""
 

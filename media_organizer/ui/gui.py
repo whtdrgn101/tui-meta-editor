@@ -17,6 +17,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMainWindow,
+    QSizePolicy,
     QSpinBox,
     QSplitter,
     QStatusBar,
@@ -24,6 +25,7 @@ from PySide6.QtWidgets import (
     QTableWidget,
     QTableWidgetItem,
     QToolBar,
+    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -347,9 +349,10 @@ class MediaOrganizerWindow(QMainWindow):
         toolbar.addAction(self._browse_action)
 
         # Scan action
-        scan_icon = self.style().standardIcon(QStyle.SP_DirOpenIcon)
+        scan_icon = self.style().standardIcon(QStyle.SP_FileDialogContentsView)
         self._scan_action = QAction(scan_icon, "Scan", self)
         self._scan_action.setToolTip("Scan selected directory for media files")
+        self._scan_action.setEnabled(False)
         self._scan_action.triggered.connect(self._on_scan_clicked)
         toolbar.addAction(self._scan_action)
 
@@ -377,8 +380,45 @@ class MediaOrganizerWindow(QMainWindow):
         refresh_icon = self.style().standardIcon(QStyle.SP_BrowserReload)
         self._refresh_action = QAction(refresh_icon, "Refresh", self)
         self._refresh_action.setToolTip("Refresh current directory")
+        self._refresh_action.setEnabled(False)
         self._refresh_action.triggered.connect(self._on_scan_clicked)
         toolbar.addAction(self._refresh_action)
+
+        # Spacer to push directory label to the right
+        spacer = QWidget()
+        spacer.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        toolbar.addWidget(spacer)
+
+        # Directory path label
+        self._dir_label = QLabel("No folder selected")
+        self._dir_label.setStyleSheet("color: #888; padding-right: 8px;")
+        toolbar.addWidget(self._dir_label)
+
+        # Close button (styled red to stand out)
+        close_icon = self.style().standardIcon(QStyle.SP_TitleBarCloseButton)
+        self._close_button = QToolButton()
+        self._close_button.setIcon(close_icon)
+        self._close_button.setText("Close")
+        self._close_button.setToolTip("Close application")
+        self._close_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
+        self._close_button.setStyleSheet("""
+            QToolButton {
+                background-color: #8b2942;
+                color: #ffffff;
+                border: 1px solid #a33a52;
+                border-radius: 4px;
+                padding: 4px 8px;
+            }
+            QToolButton:hover {
+                background-color: #a33a52;
+                border-color: #c44a62;
+            }
+            QToolButton:pressed {
+                background-color: #6b1932;
+            }
+        """)
+        self._close_button.clicked.connect(self.close)
+        toolbar.addWidget(self._close_button)
 
     def _create_left_panel(self) -> QWidget:
         """Create the input form panel."""
@@ -496,7 +536,14 @@ class MediaOrganizerWindow(QMainWindow):
         )
         if folder:
             self._current_dir = Path(folder)
+            self._on_folder_selected()
             self._on_scan_clicked()
+
+    def _on_folder_selected(self) -> None:
+        """Enable folder-dependent actions and update UI when a folder is selected."""
+        self._scan_action.setEnabled(True)
+        self._refresh_action.setEnabled(True)
+        self._dir_label.setText(str(self._current_dir))
 
     def _on_sequence_toggled(self, checked: bool) -> None:
         """Handle sequence series checkbox toggle."""
@@ -707,10 +754,12 @@ class MediaOrganizerWindow(QMainWindow):
             path = Path(urls[0].toLocalFile())
             if path.is_dir():
                 self._current_dir = path
+                self._on_folder_selected()
                 self._on_scan_clicked()
             elif path.is_file() and path.suffix.lower() in self._config.media_extensions:
                 # Scan the parent directory
                 self._current_dir = path.parent
+                self._on_folder_selected()
                 self._on_scan_clicked()
 
 
