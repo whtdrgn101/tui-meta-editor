@@ -673,12 +673,9 @@ class MediaOrganizerWindow(QMainWindow):
 
     def _on_rename_finished(self) -> None:
         """Handle rename completion."""
+        self._cleanup_worker()
         self._set_buttons_enabled(True)
         self._update_status("Renaming complete")
-
-        # Rescan to refresh file list (cleanup happens in _on_scan_clicked)
-        if self._current_dir:
-            self._on_scan_clicked()
 
     def _on_metadata_clicked(self) -> None:
         """Handle metadata update button click."""
