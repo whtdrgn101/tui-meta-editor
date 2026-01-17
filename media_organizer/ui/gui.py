@@ -213,7 +213,7 @@ class ScanWorker(QThread):
 class RenameWorker(QThread):
     """Background worker for renaming files."""
 
-    progress = Signal(int, str)  # row index, status message
+    progress = Signal(int, str, str)  # row index, status message, new filename (or empty)
     finished = Signal()
 
     def __init__(
@@ -234,7 +234,7 @@ class RenameWorker(QThread):
     def run(self) -> None:
         current_episode = self._episode
         for row_index, media_file in self._files:
-            self.progress.emit(row_index, "Processing...")
+            self.progress.emit(row_index, "Processing...", "")
             result = self._renamer.rename_file(
                 media_file.path,
                 self._season,
@@ -242,11 +242,12 @@ class RenameWorker(QThread):
                 self._episodic,
             )
             if result.success:
-                self.progress.emit(row_index, "Renamed")
+                new_name = result.new_path.stem if result.new_path else ""
+                self.progress.emit(row_index, "Renamed", new_name)
                 if self._episodic:
                     current_episode += 1
             else:
-                self.progress.emit(row_index, f"Failed: {result.error}")
+                self.progress.emit(row_index, f"Failed: {result.error}", "")
         self.finished.emit()
 
 
@@ -719,7 +720,7 @@ class MediaOrganizerWindow(QMainWindow):
         self._set_buttons_enabled(True)
         self._update_status("Metadata update complete")
 
-    def _on_file_progress(self, row: int, status: str) -> None:
+    def _on_file_progress(self, row: int, status: str, new_name: str = "") -> None:
         """Handle file processing progress update."""
         item = self._file_table.item(row, 4)  # Status is column 4
         if item:
@@ -731,6 +732,11 @@ class MediaOrganizerWindow(QMainWindow):
                 item.setForeground(QColor("#22c55e"))  # Green
             else:
                 item.setForeground(QColor("#fbbf24"))  # Yellow
+        # Update the Name column if a new name was provided
+        if new_name:
+            name_item = self._file_table.item(row, 1)  # Name is column 1
+            if name_item:
+                name_item.setText(new_name)
 
     def _set_buttons_enabled(self, enabled: bool) -> None:
         """Enable or disable toolbar actions."""
