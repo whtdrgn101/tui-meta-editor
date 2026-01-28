@@ -242,6 +242,9 @@ class RenameWorker(QThread):
                 self._episodic,
             )
             if result.success:
+                # Update the MediaFile's path to reflect the new location
+                if result.new_path:
+                    media_file.path = result.new_path
                 new_name = result.new_path.stem if result.new_path else ""
                 self.progress.emit(row_index, "Renamed", new_name)
                 if self._episodic:

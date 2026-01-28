@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest:*)",
+      "Bash(.venvScriptspytest.exe tests/test_gui.py::TestRenameWorker -v)",
+      "Bash(uv run pytest:*)"
+    ]
+  }
+}

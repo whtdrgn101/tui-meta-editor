@@ -180,6 +180,66 @@ class TestRenameWorker:
         assert calls[0][0][2] == 5
         assert calls[1][0][2] == 5
 
+    def test_rename_worker_updates_mediafile_path_on_success(self, tmp_path):
+        """Test that MediaFile.path is updated after successful rename.
+
+        This is critical for subsequent metadata operations to use the correct
+        file path. Without this update, metadata would be written to the old
+        (non-existent) file path.
+        """
+        from media_organizer.ui.gui import RenameWorker
+
+        original_file = tmp_path / "original.m4v"
+        original_file.touch()
+        new_path = tmp_path / "Test Show - S01E01.m4v"
+
+        mock_renamer = MagicMock()
+        mock_renamer.rename_file.return_value = MagicMock(
+            success=True,
+            new_path=new_path,
+        )
+
+        media_file = MediaFile.from_path(original_file)
+        files = [(0, media_file)]
+
+        worker = RenameWorker(files, mock_renamer, season=1, episode=1, episodic=False)
+        worker.progress = MagicMock()
+        worker.finished = MagicMock()
+
+        # Verify original path before rename
+        assert media_file.path == original_file
+
+        worker.run()
+
+        # After successful rename, MediaFile.path should be updated
+        assert media_file.path == new_path
+
+    def test_rename_worker_does_not_update_path_on_failure(self, tmp_path):
+        """Test that MediaFile.path is NOT updated on failed rename."""
+        from media_organizer.ui.gui import RenameWorker
+
+        original_file = tmp_path / "original.m4v"
+        original_file.touch()
+
+        mock_renamer = MagicMock()
+        mock_renamer.rename_file.return_value = MagicMock(
+            success=False,
+            new_path=None,
+            error="Permission denied",
+        )
+
+        media_file = MediaFile.from_path(original_file)
+        files = [(0, media_file)]
+
+        worker = RenameWorker(files, mock_renamer, season=1, episode=1, episodic=False)
+        worker.progress = MagicMock()
+        worker.finished = MagicMock()
+
+        worker.run()
+
+        # Path should remain unchanged on failure
+        assert media_file.path == original_file
+
 
 class TestMetadataWorker:
     """Tests for MetadataWorker thread."""
