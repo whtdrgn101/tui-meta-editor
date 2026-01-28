@@ -16,15 +16,21 @@ class MediaRenamer:
         self,
         title: str,
         config: Optional[AppConfig] = None,
+        year: Optional[int] = None,
+        include_year_in_filename: bool = False,
     ) -> None:
         """Initialize the renamer.
 
         Args:
             title: The show/movie title to use in filenames.
             config: Application configuration. If None, uses defaults.
+            year: The year to include in movie filenames (optional).
+            include_year_in_filename: If True, append year to non-episodic names.
         """
         self._title = title
         self._config = config or AppConfig()
+        self._year = year
+        self._include_year = include_year_in_filename
         self._logger = logging.getLogger(__name__)
 
     @property
@@ -36,6 +42,26 @@ class MediaRenamer:
     def title(self, value: str) -> None:
         """Set the title."""
         self._title = value
+
+    @property
+    def year(self) -> Optional[int]:
+        """Return the current year."""
+        return self._year
+
+    @year.setter
+    def year(self, value: Optional[int]) -> None:
+        """Set the year."""
+        self._year = value
+
+    @property
+    def include_year_in_filename(self) -> bool:
+        """Return whether to include year in filename."""
+        return self._include_year
+
+    @include_year_in_filename.setter
+    def include_year_in_filename(self, value: bool) -> None:
+        """Set whether to include year in filename."""
+        self._include_year = value
 
     def generate_episode_name(self, season: int, episode: int) -> str:
         """Generate an episode name using the configured format.
@@ -78,7 +104,10 @@ class MediaRenamer:
         if episodic:
             episode_name = self.generate_episode_name(season, episode)
         else:
-            episode_name = self._title
+            if self._include_year:
+                episode_name = self._config.format_movie_name(self._title, self._year)
+            else:
+                episode_name = self._title
 
         new_name = f"{episode_name}{extension}"
         return directory, new_name

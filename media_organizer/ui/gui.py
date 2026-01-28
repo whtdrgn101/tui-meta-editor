@@ -449,6 +449,14 @@ class MediaOrganizerWindow(QMainWindow):
         self._year_spin.setValue(self._config.default_year)
         layout.addWidget(self._year_spin)
 
+        # Year in filename checkbox (for movies)
+        self._year_in_filename_check = QCheckBox("Include Year in Filename")
+        self._year_in_filename_check.setToolTip(
+            "When renaming movies (non-series), append year in parentheses: Title (2002)"
+        )
+        self._year_in_filename_check.setChecked(False)
+        layout.addWidget(self._year_in_filename_check)
+
         # Sequence series group
         sequence_group = QGroupBox("Episode Numbering")
         sequence_layout = QVBoxLayout(sequence_group)
@@ -554,6 +562,10 @@ class MediaOrganizerWindow(QMainWindow):
         self._season_spin.setEnabled(checked)
         self._episode_spin.setEnabled(checked)
         self._padding_combo.setEnabled(checked)
+        # Year in filename is only for movies (non-episodic)
+        self._year_in_filename_check.setEnabled(not checked)
+        if checked:
+            self._year_in_filename_check.setChecked(False)
 
     def _on_select_all_changed(self, state: int) -> None:
         """Handle Select All checkbox state change."""
@@ -662,7 +674,17 @@ class MediaOrganizerWindow(QMainWindow):
 
         # Apply selected padding to config
         self._config.episode_padding = self._padding_combo.currentData()
-        renamer = MediaRenamer(title, config=self._config)
+
+        # Get year settings for non-episodic renaming
+        include_year = self._year_in_filename_check.isChecked()
+        year = self._year_spin.value() if include_year else None
+
+        renamer = MediaRenamer(
+            title,
+            config=self._config,
+            year=year,
+            include_year_in_filename=include_year,
+        )
         self._cleanup_worker()
         self._worker = RenameWorker(
             selected_files,
@@ -699,10 +721,12 @@ class MediaOrganizerWindow(QMainWindow):
         self._update_status(f"Updating metadata for {len(selected_files)} files...")
         self._set_buttons_enabled(False)
 
+        # Only include season/episode in metadata for series (episodic mode)
+        is_series = self._sequence_check.isChecked()
         metadata = MediaMetadata(
             title=title,
-            season=self._season_spin.value(),
-            episode=self._episode_spin.value(),
+            season=self._season_spin.value() if is_series else 0,
+            episode=self._episode_spin.value() if is_series else 0,
             genre=self._genre_combo.currentData() or "",
             year=self._year_spin.value(),
         )

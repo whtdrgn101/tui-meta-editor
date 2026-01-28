@@ -287,3 +287,184 @@ class TestMediaRenamerRenameFile:
         assert (tmp_path / "Show S01 EP01.mp4").exists()
         assert (tmp_path / "Show S01 EP02.mp4").exists()
         assert (tmp_path / "Show S01 EP03.mp4").exists()
+
+
+class TestMediaRenamerYearInFilename:
+    """Tests for MediaRenamer year in filename feature."""
+
+    def test_init_with_year_parameters(self):
+        """Test renamer initializes with year parameters."""
+        renamer = MediaRenamer(
+            "Test Movie",
+            year=2002,
+            include_year_in_filename=True,
+        )
+        assert renamer.year == 2002
+        assert renamer.include_year_in_filename is True
+
+    def test_year_property_setter(self):
+        """Test year can be changed via property."""
+        renamer = MediaRenamer("Movie")
+        renamer.year = 2024
+        assert renamer.year == 2024
+
+    def test_include_year_property_setter(self):
+        """Test include_year_in_filename can be changed via property."""
+        renamer = MediaRenamer("Movie")
+        renamer.include_year_in_filename = True
+        assert renamer.include_year_in_filename is True
+
+    def test_generate_new_name_non_episodic_with_year(self, tmp_path, app_config):
+        """Test generating non-episodic filename with year."""
+        file_path = tmp_path / "original.mp4"
+        file_path.touch()
+
+        renamer = MediaRenamer(
+            "Movie Title",
+            config=app_config,
+            year=2002,
+            include_year_in_filename=True,
+        )
+        directory, new_name = renamer.generate_new_name(file_path, 1, 1, episodic=False)
+
+        assert directory == tmp_path
+        assert new_name == "Movie Title (2002).mp4"
+
+    def test_generate_new_name_non_episodic_without_year_flag(self, tmp_path, app_config):
+        """Test generating non-episodic filename without year flag."""
+        file_path = tmp_path / "original.mp4"
+        file_path.touch()
+
+        renamer = MediaRenamer(
+            "Movie Title",
+            config=app_config,
+            year=2002,
+            include_year_in_filename=False,  # Year provided but flag is False
+        )
+        directory, new_name = renamer.generate_new_name(file_path, 1, 1, episodic=False)
+
+        assert new_name == "Movie Title.mp4"
+
+    def test_generate_new_name_episodic_ignores_year(self, tmp_path, app_config):
+        """Test generating episodic filename ignores year setting."""
+        file_path = tmp_path / "original.mp4"
+        file_path.touch()
+
+        renamer = MediaRenamer(
+            "Show Title",
+            config=app_config,
+            year=2002,
+            include_year_in_filename=True,
+        )
+        directory, new_name = renamer.generate_new_name(file_path, 1, 5, episodic=True)
+
+        # Episodic should still use episode format, not year
+        assert new_name == "Show Title S01 EP005.mp4"
+        assert "(2002)" not in new_name
+
+    def test_rename_non_episodic_with_year(self, tmp_path, app_config):
+        """Test successful rename with year in filename."""
+        file_path = tmp_path / "original.mp4"
+        file_path.touch()
+
+        renamer = MediaRenamer(
+            "Test Movie",
+            config=app_config,
+            year=2002,
+            include_year_in_filename=True,
+        )
+        result = renamer.rename_file(file_path, 1, 1, episodic=False)
+
+        assert result.success is True
+        assert result.new_path == tmp_path / "Test Movie (2002).mp4"
+        assert result.new_path.exists()
+        assert not file_path.exists()
+
+    def test_rename_with_m4v_extension_and_year(self, tmp_path, app_config):
+        """Test rename preserves m4v extension with year."""
+        file_path = tmp_path / "original.m4v"
+        file_path.touch()
+
+        renamer = MediaRenamer(
+            "Test Movie",
+            config=app_config,
+            year=2024,
+            include_year_in_filename=True,
+        )
+        result = renamer.rename_file(file_path, 1, 1, episodic=False)
+
+        assert result.success is True
+        assert result.new_path.suffix == ".m4v"
+        assert result.new_path.name == "Test Movie (2024).m4v"
+
+    def test_rename_multiple_movies_same_year(self, tmp_path, app_config):
+        """Test renaming multiple movies with same year fails for second."""
+        file1 = tmp_path / "movie1.mp4"
+        file2 = tmp_path / "movie2.mp4"
+        file1.touch()
+        file2.touch()
+
+        renamer = MediaRenamer(
+            "Same Movie",
+            config=app_config,
+            year=2002,
+            include_year_in_filename=True,
+        )
+
+        result1 = renamer.rename_file(file1, 1, 1, episodic=False)
+        assert result1.success is True
+
+        result2 = renamer.rename_file(file2, 1, 1, episodic=False)
+        assert result2.success is False
+        assert "already exists" in result2.error
+
+    def test_rename_with_year_already_in_filename(self, tmp_path, app_config):
+        """Test renaming when target already has year (idempotent)."""
+        file_path = tmp_path / "Test Movie (2002).mp4"
+        file_path.touch()
+
+        renamer = MediaRenamer(
+            "Test Movie",
+            config=app_config,
+            year=2002,
+            include_year_in_filename=True,
+        )
+        result = renamer.rename_file(file_path, 1, 1, episodic=False)
+
+        # Should succeed (same source and target)
+        assert result.success is True
+        assert file_path.exists()
+
+    def test_rename_with_mkv_extension_and_year(self, tmp_path, app_config):
+        """Test rename preserves mkv extension with year."""
+        file_path = tmp_path / "original.mkv"
+        file_path.touch()
+
+        renamer = MediaRenamer(
+            "Test Movie",
+            config=app_config,
+            year=1999,
+            include_year_in_filename=True,
+        )
+        result = renamer.rename_file(file_path, 1, 1, episodic=False)
+
+        assert result.success is True
+        assert result.new_path.suffix == ".mkv"
+        assert result.new_path.name == "Test Movie (1999).mkv"
+
+    def test_rename_with_invalid_year_no_year_in_filename(self, tmp_path, app_config):
+        """Test rename with invalid year produces filename without year."""
+        file_path = tmp_path / "original.mp4"
+        file_path.touch()
+
+        renamer = MediaRenamer(
+            "Test Movie",
+            config=app_config,
+            year=999,  # Invalid - less than 1000
+            include_year_in_filename=True,
+        )
+        result = renamer.rename_file(file_path, 1, 1, episodic=False)
+
+        assert result.success is True
+        assert result.new_path.name == "Test Movie.mp4"
+        assert "(999)" not in result.new_path.name

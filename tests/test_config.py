@@ -230,3 +230,55 @@ class TestAppConfigFormatEpisodeName:
         config = AppConfig()
         result = config.format_episode_name("Show: The Beginning!", 1, 1)
         assert result == "Show: The Beginning! S01 EP001"
+
+
+class TestAppConfigFormatMovieName:
+    """Tests for AppConfig.format_movie_name() method."""
+
+    def test_format_without_year(self):
+        """Test format without year returns just title."""
+        config = AppConfig()
+        result = config.format_movie_name("Test Movie")
+        assert result == "Test Movie"
+
+    def test_format_with_none_year(self):
+        """Test format with None year returns just title."""
+        config = AppConfig()
+        result = config.format_movie_name("Test Movie", None)
+        assert result == "Test Movie"
+
+    def test_format_with_valid_year(self):
+        """Test format with valid year appends in parentheses."""
+        config = AppConfig()
+        result = config.format_movie_name("Test Movie", 2002)
+        assert result == "Test Movie (2002)"
+
+    def test_format_with_zero_year(self):
+        """Test format with zero year returns just title."""
+        config = AppConfig()
+        result = config.format_movie_name("Test Movie", 0)
+        assert result == "Test Movie"
+
+    def test_format_with_invalid_year(self):
+        """Test format with year < 1000 returns just title."""
+        config = AppConfig()
+        result = config.format_movie_name("Test Movie", 999)
+        assert result == "Test Movie"
+
+    def test_format_with_boundary_year(self):
+        """Test format with year = 1000 includes year."""
+        config = AppConfig()
+        result = config.format_movie_name("Test Movie", 1000)
+        assert result == "Test Movie (1000)"
+
+    def test_format_with_special_characters_in_title(self):
+        """Test format with special characters in title."""
+        config = AppConfig()
+        result = config.format_movie_name("Movie: The Beginning!", 2024)
+        assert result == "Movie: The Beginning! (2024)"
+
+    def test_format_preserves_title_spacing(self):
+        """Test format preserves title spacing."""
+        config = AppConfig()
+        result = config.format_movie_name("The  Movie  Title", 2024)
+        assert result == "The  Movie  Title (2024)"

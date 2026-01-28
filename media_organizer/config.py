@@ -96,3 +96,17 @@ class AppConfig:
         """
         format_str = f"{{title}} S{{season:02d}} EP{{episode:0{self.episode_padding}d}}"
         return format_str.format(title=title, season=season, episode=episode)
+
+    def format_movie_name(self, title: str, year: int | None = None) -> str:
+        """Format a movie name with optional year.
+
+        Args:
+            title: The movie title.
+            year: Optional year to append in parentheses.
+
+        Returns:
+            Formatted movie name string (e.g., "Movie Title (2002)" or "Movie Title").
+        """
+        if year and year >= 1000:
+            return f"{title} ({year})"
+        return title

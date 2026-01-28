@@ -321,3 +321,125 @@ class TestRunGui:
 
                 mock_window_class.assert_called_once()
                 mock_window.show.assert_called_once()
+
+
+class TestYearInFilenameCheckbox:
+    """Tests for Year in Filename checkbox functionality."""
+
+    def test_year_in_filename_checkbox_exists(self, window):
+        """Test that year in filename checkbox exists."""
+        assert hasattr(window, "_year_in_filename_check")
+        assert window._year_in_filename_check is not None
+
+    def test_year_in_filename_default_unchecked(self, window):
+        """Test year in filename checkbox defaults to unchecked."""
+        assert not window._year_in_filename_check.isChecked()
+
+    def test_year_in_filename_enabled_initially(self, window):
+        """Test year in filename checkbox is enabled initially."""
+        assert window._year_in_filename_check.isEnabled()
+
+    def test_year_in_filename_disabled_when_sequence_checked(self, window):
+        """Test year in filename is disabled when sequence is checked."""
+        window._sequence_check.setChecked(True)
+        assert not window._year_in_filename_check.isEnabled()
+
+    def test_year_in_filename_enabled_when_sequence_unchecked(self, window):
+        """Test year in filename is enabled when sequence is unchecked."""
+        window._sequence_check.setChecked(True)
+        window._sequence_check.setChecked(False)
+        assert window._year_in_filename_check.isEnabled()
+
+    def test_year_in_filename_unchecked_when_sequence_enabled(self, window):
+        """Test year in filename gets unchecked when sequence is enabled."""
+        window._year_in_filename_check.setChecked(True)
+        window._sequence_check.setChecked(True)
+        assert not window._year_in_filename_check.isChecked()
+
+    def test_year_in_filename_tooltip(self, window):
+        """Test year in filename checkbox has informative tooltip."""
+        tooltip = window._year_in_filename_check.toolTip()
+        assert "year" in tooltip.lower()
+        assert "movie" in tooltip.lower() or "non-series" in tooltip.lower()
+
+
+class TestMetadataForMovies:
+    """Tests for metadata handling when not in series mode."""
+
+    def test_metadata_excludes_season_episode_for_movies(self, window, tmp_path, qtbot):
+        """Test that metadata excludes season/episode when not in series mode."""
+        from PySide6.QtWidgets import QTableWidgetItem
+        from PySide6.QtCore import Qt
+
+        # Setup window with a file
+        window._current_dir = tmp_path
+        file1 = tmp_path / "movie.mp4"
+        file1.touch()
+
+        # Simulate having files loaded
+        window._media_files = [MediaFile.from_path(file1)]
+        window._file_table.setRowCount(1)
+
+        # Setup checkbox item
+        checkbox_item = QTableWidgetItem()
+        checkbox_item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        checkbox_item.setCheckState(Qt.Checked)
+        window._file_table.setItem(0, 0, checkbox_item)
+
+        # Set title and ensure sequence is NOT checked (movie mode)
+        window._title_input.setText("Test Movie")
+        window._sequence_check.setChecked(False)
+        window._season_spin.setValue(1)
+        window._episode_spin.setValue(1)
+
+        # Mock the metadata worker to capture the metadata passed
+        with patch("media_organizer.ui.gui.MetadataWorker") as mock_worker_class:
+            mock_worker = MagicMock()
+            mock_worker_class.return_value = mock_worker
+
+            window._on_metadata_clicked()
+
+            # Check that MetadataWorker was called with season=0, episode=0
+            call_args = mock_worker_class.call_args
+            metadata = call_args[0][2]  # Third positional arg is metadata
+            assert metadata.season == 0
+            assert metadata.episode == 0
+
+    def test_metadata_includes_season_episode_for_series(self, window, tmp_path, qtbot):
+        """Test that metadata includes season/episode when in series mode."""
+        from PySide6.QtWidgets import QTableWidgetItem
+        from PySide6.QtCore import Qt
+
+        # Setup window with a file
+        window._current_dir = tmp_path
+        file1 = tmp_path / "episode.mp4"
+        file1.touch()
+
+        # Simulate having files loaded
+        window._media_files = [MediaFile.from_path(file1)]
+        window._file_table.setRowCount(1)
+
+        # Setup checkbox item
+        checkbox_item = QTableWidgetItem()
+        checkbox_item.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+        checkbox_item.setCheckState(Qt.Checked)
+        window._file_table.setItem(0, 0, checkbox_item)
+
+        # Set title and check sequence (series mode)
+        window._title_input.setText("Test Show")
+        window._sequence_check.setChecked(True)
+        window._season_spin.setValue(2)
+        window._episode_spin.setValue(5)
+
+        # Mock the metadata worker to capture the metadata passed
+        with patch("media_organizer.ui.gui.MetadataWorker") as mock_worker_class:
+            mock_worker = MagicMock()
+            mock_worker_class.return_value = mock_worker
+
+            window._on_metadata_clicked()
+
+            # Check that MetadataWorker was called with the correct season/episode
+            call_args = mock_worker_class.call_args
+            metadata = call_args[0][2]  # Third positional arg is metadata
+            assert metadata.season == 2
+            assert metadata.episode == 5
